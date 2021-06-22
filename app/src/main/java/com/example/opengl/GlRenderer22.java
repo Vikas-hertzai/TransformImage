@@ -64,7 +64,7 @@ public class GlRenderer22 implements GLSurfaceView.Renderer{
         System.out.println("*************************************************************     in OnsurfaceChange 22  ********************");
         gl.glViewport(0,0, width, height);
         gl.glClearColor(0,0,0,1);
-        Matrix.orthoM(mProjectionMatrix, 0, 0, width, height, 0, 0, 1);
+        Matrix.orthoM(mProjectionMatrix, 0, 0, 512, 683, 0, 0, 1);
 
 
         float ratio = (float) width / height;
@@ -75,6 +75,7 @@ public class GlRenderer22 implements GLSurfaceView.Renderer{
     }
 
     int i = 0;
+
     @Override
     public void onDrawFrame(GL10 gl) {
 
@@ -134,8 +135,29 @@ public class GlRenderer22 implements GLSurfaceView.Renderer{
                 float ref_pt2 = ref_pt1 * tex_scale_x;
                 float ref_pt3 = ref_pts.get(pt + 1);
                 float ref_pt4 = ref_pt3 * tex_scale_y;
+
+                if (ref_pt2 < -20){
+                    ref_pt2 = -20.0f;
+                }
+                else{
+                    if (ref_pt2 > 2){
+                        ref_pt2 = 2.0f;
+                    }
+                }
+
+                if (ref_pt4 < -20){
+                    ref_pt4 = -20.0f;
+                }
+                else{
+                    if (ref_pt4 > 2){
+                        ref_pt4 = 2.0f;
+                    }
+                }
+
+
                 texture.put(j, ref_pt2);
                 texture.put(j + 1, ref_pt4);
+
                 float wrp_pt1 = wrp_pts_i.get(pt);
                 float wrp_pt2 = wrp_pts_i.get(pt + 1);
                 vertex.put(j, wrp_pt1);
@@ -160,7 +182,17 @@ public class GlRenderer22 implements GLSurfaceView.Renderer{
             e.printStackTrace();
         }
 
-        System.out.println("**********   i =   " + i + "  vertex :  " + texture.get(153));
+//        System.out.println("  texture :  " + texture.get(62));
+//        System.out.println("  texture :  " + texture.get(63));
+//        System.out.println("  texture :  " + texture.get(64));
+//        System.out.println("  texture :  " + texture.get(65));
+//        System.out.println("  texture :  " + texture.get(66));
+//        System.out.println("  texture :  " + texture.get(67));
+//        for(int z = 0; z < 290; z++) {
+//            System.out.println(texture.get(z));
+//        }
+
+        System.out.println("  i  :  " + i);
         i = i + 1;
 
 
@@ -182,8 +214,8 @@ public class GlRenderer22 implements GLSurfaceView.Renderer{
 
         // Calculate the projection and view transformation
         //calculate the model view matrix
-        Matrix.multiplyMM(mMVMatrix,0,mViewMatrix,0,mModelMatrix,0);
-        Matrix.multiplyMM(mMVPMatrix,0,mProjectionMatrix,0,mMVMatrix,0);
+//        Matrix.multiplyMM(mMVMatrix,0,mViewMatrix,0,mModelMatrix,0);
+//        Matrix.multiplyMM(mMVPMatrix,0,mProjectionMatrix,0,mMVMatrix,0);
 
         Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mViewMatrix, 0);
 

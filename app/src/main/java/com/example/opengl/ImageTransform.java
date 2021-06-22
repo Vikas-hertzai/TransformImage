@@ -556,3 +556,16 @@ public class ImageTransform {
 
 
 }
+
+
+
+
+
+//        Matrix.setLookAtM(mViewMatrix, 0,
+//                0.0f, 0f, -3.0f,//camera is at (0,0,1)
+//                0f, 0f, 0f,//looks at the origin
+//                0f, 1f, 0.0f);//head is down (set to (0,1,0) to look from the top)
+
+
+//        Matrix.frustumM(mProjectionMatrix, 0, left,right, -1.0f, 1.0f, .0f, 7.0f);
+//        Matrix.frustumM(mProjectionMatrix, 0, left,right, -1.0f, 1.0f, .0f, 7.0f);

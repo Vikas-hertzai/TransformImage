@@ -12,6 +12,7 @@ import static android.opengl.GLES20.glGetString;
 public class OpenGlView extends GLSurfaceView {
 
     private final GlRenderer22 renderer;
+//    private final MyRenderer renderer;
 
     public OpenGlView(Context context) {
         super(context);
@@ -20,6 +21,7 @@ public class OpenGlView extends GLSurfaceView {
         // set the renderer for drawing
         System.out.println("*************************************************************     in OpenGlView ********************");
         renderer = new GlRenderer22();
+//        renderer = new MyRenderer();
         setRenderer(renderer);
     }
 
@@ -29,6 +31,7 @@ public class OpenGlView extends GLSurfaceView {
         System.out.println("*************************************************************     in OpenGlView 2 ********************");
         // set the renderer for drawing
         renderer = new GlRenderer22();
+//        renderer = new MyRenderer();
     }
 
     private void initOpenGlView() {

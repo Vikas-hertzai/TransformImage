@@ -4,6 +4,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.opengl.GLES10;
 import android.opengl.GLES20;
+import android.opengl.GLES32;
 import android.opengl.GLUtils;
 import android.os.Environment;
 
@@ -346,9 +347,9 @@ public class transform {
             GLES20.glUniformMatrix4fv(mMVPMatrixHandle, 1, false, mvpMatrix, 0); // Apply the projection and view transformation
             GlRenderer22.checkGlError("error"); // check error
             glClear(GL_COLOR_BUFFER_BIT); // Clear the contents of the GLSurfaceView using glClear
-            GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, tri_idx.size());
+            GLES20.glDrawArrays(GLES10.GL_TRIANGLES, 0, tri_idx.size());
 //            GLES20.glDrawElements(GLES20.GL_TRIANGLES, tri_idx.size(), GLES20.GL_UNSIGNED_SHORT, index); // to draw
-            GLES20.glFinish();
+//            GLES20.glFinish();
 
             // clear buffer and increament i
             index.clear();
