@@ -52,6 +52,7 @@ public class GlRenderer22 implements GLSurfaceView.Renderer{
     List<Float> ref_pts;
     List<Float> wrp_pts;
     int total_frame;
+    float start_time = 0;
 
 
     public void LoadTexture()throws FileNotFoundException{
@@ -133,6 +134,7 @@ public class GlRenderer22 implements GLSurfaceView.Renderer{
         }
 
         TextureBuffer();
+        start_time = System.nanoTime()/1000000;
 
     }
 
@@ -147,51 +149,60 @@ public class GlRenderer22 implements GLSurfaceView.Renderer{
 
     int i = 0;
 
+    float frame_rate = 62.5f;
+    float frameInterval = 1000/frame_rate;
+
+
     @Override
     public void onDrawFrame(GL10 gl) {
 
-//        if (i > total_frame){
-//            break;
-//        }
-
-        int st = i * ref_pts.size();
-        int en = st + 160;
-        List<Float> wrp_pts_i =  wrp_pts.subList(st, en);
-        ByteBuffer BbVertex = ByteBuffer.allocateDirect(tri_idx.size()*2*4);
-        BbVertex.order(ByteOrder.nativeOrder());
-        vertex = BbVertex.asFloatBuffer();
-        int j = 0;
-        for (int idx = 0; idx < tri_idx.size(); idx++) {
-            int val = tri_idx.get(idx);
-            int pt = val;
-
-            float wrp_pt1 = wrp_pts_i.get(pt);
-            float wrp_pt2 = wrp_pts_i.get(pt + 1);
-            vertex.put(j, wrp_pt1);
-            vertex.put(j + 1, wrp_pt2);
-            j = j +2;
+        float endTime =  System.nanoTime()/1000000;
+        float elapsedTime = endTime - start_time;
+        if ((endTime - start_time) < frameInterval){
+            System.out.println(endTime);
         }
-        vertex.position(0);
 
-        System.out.println("  i  :  " + i);
-        i = i + 1;
+    else{
+            start_time = System.nanoTime()/1000000;
+            int st = i * ref_pts.size();
+            int en = st + 160;
+            List<Float> wrp_pts_i =  wrp_pts.subList(st, en);
+            ByteBuffer BbVertex = ByteBuffer.allocateDirect(tri_idx.size()*2*4);
+            BbVertex.order(ByteOrder.nativeOrder());
+            vertex = BbVertex.asFloatBuffer();
+            int j = 0;
+            for (int idx = 0; idx < tri_idx.size(); idx++) {
+                int val = tri_idx.get(idx);
+                int pt = val;
 
-        //Redraw background colour
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT);
+                float wrp_pt1 = wrp_pts_i.get(pt);
+                float wrp_pt2 = wrp_pts_i.get(pt + 1);
+                vertex.put(j, wrp_pt1);
+                vertex.put(j + 1, wrp_pt2);
+                j = j +2;
+            }
+            vertex.position(0);
 
-        Matrix.setIdentityM(mMVPMatrix,0);//set the model view projection matrix to an identity matrix
-        Matrix.setIdentityM(mMVMatrix,0);//set the model view  matrix to an identity matrix
-        Matrix.setIdentityM(mModelMatrix,0);//set the model matrix to an identity matrix
+            System.out.println("  i  :  " + i);
+            i = i + 1;
 
-        // Set the camera position (View matrix)
-        Matrix.setLookAtM(mViewMatrix, 0,
-                0.0f, 0f, 1.0f,//camera is at (0,0,1)
-                0f, 0f, 0f,//looks at the origin
-                0f, 1f, 0.0f);//head is down (set to (0,1,0) to look from the top)
+            //Redraw background colour
+            gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT);
 
-        Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mViewMatrix, 0);
+            Matrix.setIdentityM(mMVPMatrix,0);//set the model view projection matrix to an identity matrix
+            Matrix.setIdentityM(mMVMatrix,0);//set the model view  matrix to an identity matrix
+            Matrix.setIdentityM(mModelMatrix,0);//set the model matrix to an identity matrix
 
-        Transform.run(tex[0], mMVPMatrix, vertex, texture, triangle_size);
+            // Set the camera position (View matrix)
+            Matrix.setLookAtM(mViewMatrix, 0,
+                    0.0f, 0f, 1.0f,//camera is at (0,0,1)
+                    0f, 0f, 0f,//looks at the origin
+                    0f, 1f, 0.0f);//head is down (set to (0,1,0) to look from the top)
+
+            Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mViewMatrix, 0);
+
+            Transform.run(tex[0], mMVPMatrix, vertex, texture, triangle_size);
+        }
 
     }
 }
