@@ -1,15 +1,18 @@
 package com.example.opengl;
 
 import android.graphics.Bitmap;
+import android.media.AudioManager;
+import android.media.MediaParser;
+import android.media.MediaPlayer;
 import android.opengl.GLES20;
-import android.opengl.GLES32;
 import android.opengl.GLSurfaceView;
-import android.opengl.GLU;
 import android.opengl.GLUtils;
 import android.opengl.Matrix;
-import android.util.Log;
+import android.os.Environment;
 
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
@@ -37,7 +40,7 @@ public class GlRenderer22 implements GLSurfaceView.Renderer{
     private final float[] mMVMatrix=new float[16];//model view matrix
     private final float[] mModelMatrix=new float[16];//model  matrix
 
-    private transform Transform;
+    private com.example.opengl.Transform Transform;
 
     private FloatBuffer vertex;
     private FloatBuffer texture;
@@ -53,6 +56,22 @@ public class GlRenderer22 implements GLSurfaceView.Renderer{
     List<Float> wrp_pts;
     int total_frame;
     float start_time = 0;
+
+
+    public void AudioPlayer(String url) throws IOException {
+        MediaPlayer mplayer = new MediaPlayer();
+        mplayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+        try {
+//            File audio_path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+//            File myObj = new File(audio_path, "M6_0.wav");
+//            mplayer.setDataSource(String.valueOf(myObj));
+            mplayer.setDataSource(url);
+            mplayer.prepare();
+            mplayer.start();
+        }catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
 
     public void LoadTexture()throws FileNotFoundException{
@@ -124,7 +143,7 @@ public class GlRenderer22 implements GLSurfaceView.Renderer{
         // set the background frame colour
         gl.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
-        Transform = new transform();
+        Transform = new Transform();
         // added
         try {
             LoadTexture();
@@ -134,6 +153,11 @@ public class GlRenderer22 implements GLSurfaceView.Renderer{
         }
 
         TextureBuffer();
+        try {
+            AudioPlayer("http://stream.mcgroce.com/examples/M6_0.wav");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         start_time = System.nanoTime()/1000000;
 
     }

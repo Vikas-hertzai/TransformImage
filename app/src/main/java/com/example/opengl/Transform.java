@@ -46,9 +46,9 @@ import static android.opengl.GLES20.glViewport;
 import static javax.microedition.khronos.opengles.GL10.GL_MODELVIEW;
 import static javax.microedition.khronos.opengles.GL10.GL_PROJECTION;
 
-public class transform {
+public class Transform {
 
-    public transform() {
+    public Transform() {
         initializeShader();
     }
 
