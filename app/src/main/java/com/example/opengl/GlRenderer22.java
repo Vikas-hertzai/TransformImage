@@ -2,15 +2,12 @@ package com.example.opengl;
 
 import android.graphics.Bitmap;
 import android.media.AudioManager;
-import android.media.MediaParser;
 import android.media.MediaPlayer;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.GLUtils;
 import android.opengl.Matrix;
-import android.os.Environment;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -46,6 +43,8 @@ public class GlRenderer22 implements GLSurfaceView.Renderer{
     private FloatBuffer texture;
     private int triangle_size;
 
+    private boolean flag=false;
+
     int[] tex = new int[1];
     int im_width;
     int im_height;
@@ -55,22 +54,39 @@ public class GlRenderer22 implements GLSurfaceView.Renderer{
     List<Float> ref_pts;
     List<Float> wrp_pts;
     int total_frame;
-    float start_time = 0;
+    long start_time = 0;
+    long curr_time=0;
+    long latency=0;
+    long audioStarted =0;
+    long start=System.nanoTime();
+    long end=System.nanoTime();
+    MediaPlayer mplayer;
+    int audioDuration=0;
 
 
-    public void AudioPlayer(String url) throws IOException {
-        MediaPlayer mplayer = new MediaPlayer();
+    public long AudioPlayer(String url) throws IOException {
+        mplayer = new MediaPlayer();
+        long audioStarted=0;
+
         mplayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
         try {
+            System.out.println("Here1");
 //            File audio_path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
 //            File myObj = new File(audio_path, "M6_0.wav");
 //            mplayer.setDataSource(String.valueOf(myObj));
             mplayer.setDataSource(url);
+            System.out.println("Here2");
             mplayer.prepare();
+            audioStarted=System.nanoTime();
+            System.out.println("Here3");
             mplayer.start();
+            System.out.println("Here4");
+
+
         }catch (IOException e) {
             e.printStackTrace();
         }
+        return audioStarted;
     }
 
 
@@ -92,6 +108,7 @@ public class GlRenderer22 implements GLSurfaceView.Renderer{
         tri_idx = Transform.ReadTriangulationFile("triangulation.txt");
         ref_pts = Transform.ReadReferenceFile("reference_points.txt");
         wrp_pts = Transform.ReadWarpedFile("warped_points.txt");
+        System.out.println("wrp pts size"+wrp_pts.size()/ref_pts.size());
         triangle_size = tri_idx.size();
         total_frame = wrp_pts.size() / ref_pts.size();    // number of frame
     }
@@ -153,12 +170,14 @@ public class GlRenderer22 implements GLSurfaceView.Renderer{
         }
 
         TextureBuffer();
-        try {
-            AudioPlayer("http://stream.mcgroce.com/examples/M6_0.wav");
+        /*try {
+            AudioPlayer("http://stream.mcgroce.com/examples/1626242467.228868.wav");
+            start_time=System.nanoTime();
         } catch (IOException e) {
             e.printStackTrace();
-        }
-        start_time = System.nanoTime()/1000000;
+        }*/
+        flag=true;
+        //start_time = System.nanoTime()/1000000;
 
     }
 
@@ -175,23 +194,53 @@ public class GlRenderer22 implements GLSurfaceView.Renderer{
 
     float frame_rate = 62.5f;
     float frameInterval = 1000/frame_rate;
+    float totalTime=total_frame*frameInterval;
 
 
     @Override
     public void onDrawFrame(GL10 gl) {
 
-        float endTime =  System.nanoTime()/1000000;
-        float elapsedTime = endTime - start_time;
-        if ((endTime - start_time) < frameInterval){
-            System.out.println(endTime);
+        if(flag)
+        {
+            try {
+                AudioPlayer("http://stream.mcgroce.com/examples/1626242467.228868.wav");
+                start_time=System.currentTimeMillis();
+                audioDuration=mplayer.getDuration();
+                flag=false;
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
 
-    else{
-            start_time = System.nanoTime()/1000000;
+        //curr_time=System.currentTimeMillis();
+        int audioTime=mplayer.getCurrentPosition();
+        double timeSec=(audioTime)/10e3;
+
+
+        if(timeSec<0)
+        {
+            timeSec=0;
+        }
+
+        System.out.println("freq="+(float)(wrp_pts.size()/((float)(audioDuration/10e3*ref_pts.size()))));
+
+        i=(int)(timeSec*((float)(wrp_pts.size()/((float)audioDuration/10e3*ref_pts.size()))));
+
+
+            long frameStart=System.nanoTime();
+            start=System.nanoTime();
             int st = i * ref_pts.size();
-            int en = st + 160;
-            List<Float> wrp_pts_i =  wrp_pts.subList(st, en);
-            ByteBuffer BbVertex = ByteBuffer.allocateDirect(tri_idx.size()*2*4);
+            int en = st + ref_pts.size();
+            if(en> wrp_pts.size())
+            {
+                i=0;
+                st = 0;
+                en = st + 160;
+                flag=true;
+            }
+
+            List<Float> wrp_pts_i = wrp_pts.subList(st, en);
+            ByteBuffer BbVertex = ByteBuffer.allocateDirect(tri_idx.size() * 2 * 4);
             BbVertex.order(ByteOrder.nativeOrder());
             vertex = BbVertex.asFloatBuffer();
             int j = 0;
@@ -203,19 +252,17 @@ public class GlRenderer22 implements GLSurfaceView.Renderer{
                 float wrp_pt2 = wrp_pts_i.get(pt + 1);
                 vertex.put(j, wrp_pt1);
                 vertex.put(j + 1, wrp_pt2);
-                j = j +2;
+                j = j + 2;
             }
             vertex.position(0);
-
-            System.out.println("  i  :  " + i);
-            i = i + 1;
+            //i = i + 1;
 
             //Redraw background colour
             gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT);
 
-            Matrix.setIdentityM(mMVPMatrix,0);//set the model view projection matrix to an identity matrix
-            Matrix.setIdentityM(mMVMatrix,0);//set the model view  matrix to an identity matrix
-            Matrix.setIdentityM(mModelMatrix,0);//set the model matrix to an identity matrix
+            Matrix.setIdentityM(mMVPMatrix, 0);//set the model view projection matrix to an identity matrix
+            Matrix.setIdentityM(mMVMatrix, 0);//set the model view  matrix to an identity matrix
+            Matrix.setIdentityM(mModelMatrix, 0);//set the model matrix to an identity matrix
 
             // Set the camera position (View matrix)
             Matrix.setLookAtM(mViewMatrix, 0,
@@ -225,8 +272,22 @@ public class GlRenderer22 implements GLSurfaceView.Renderer{
 
             Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mViewMatrix, 0);
 
-            Transform.run(tex[0], mMVPMatrix, vertex, texture, triangle_size);
-        }
+
+            long renderedAt=Transform.run(tex[0], mMVPMatrix, vertex, texture, triangle_size);
+        start=System.nanoTime();
+        /*if(flag)
+        {
+
+            try {
+                start_time=System.nanoTime();
+                audioStarted=AudioPlayer("http://stream.mcgroce.com/examples/M6_0.wav");
+                latency=audioStarted-renderedAt;
+                latency=0;
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            flag=false;
+        }*/
 
     }
 }

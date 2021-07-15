@@ -4,47 +4,22 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.opengl.GLES10;
 import android.opengl.GLES20;
-import android.opengl.GLES32;
-import android.opengl.GLUtils;
 import android.os.Environment;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
-import javax.microedition.khronos.opengles.GL10;
-
-import static android.opengl.GLES10.glLoadIdentity;
-import static android.opengl.GLES10.glMatrixMode;
-import static android.opengl.GLES10.glOrthox;
 import static android.opengl.GLES20.GL_BLEND;
 import static android.opengl.GLES20.GL_COLOR_BUFFER_BIT;
-import static android.opengl.GLES20.GL_DEPTH_BUFFER_BIT;
 import static android.opengl.GLES20.GL_DEPTH_TEST;
-import static android.opengl.GLES20.GL_LINEAR;
-import static android.opengl.GLES20.GL_ONE;
-import static android.opengl.GLES20.GL_ONE_MINUS_SRC_ALPHA;
-import static android.opengl.GLES20.GL_TEXTURE_2D;
-import static android.opengl.GLES20.GL_TEXTURE_MAG_FILTER;
-import static android.opengl.GLES20.GL_TEXTURE_MIN_FILTER;
-import static android.opengl.GLES20.glBindTexture;
-import static android.opengl.GLES20.glBlendFunc;
 import static android.opengl.GLES20.glClear;
 import static android.opengl.GLES20.glClearColor;
 import static android.opengl.GLES20.glDisable;
-import static android.opengl.GLES20.glEnable;
-import static android.opengl.GLES20.glGenTextures;
-import static android.opengl.GLES20.glTexParameteri;
-import static android.opengl.GLES20.glViewport;
-import static javax.microedition.khronos.opengles.GL10.GL_MODELVIEW;
-import static javax.microedition.khronos.opengles.GL10.GL_PROJECTION;
 
 public class Transform {
 
@@ -159,6 +134,7 @@ public class Transform {
 
     // read triangulation.txt
     static List ReadTriangulationFile(String file_name) throws FileNotFoundException {
+
         List<Integer> list=new ArrayList<Integer>();
 
         File path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
@@ -178,8 +154,9 @@ public class Transform {
     }
 
 
-    public void run(int tex, float[] mvpMatrix, FloatBuffer vertex, FloatBuffer texture, int triangle_size){
-
+    public long run(int tex, float[] mvpMatrix, FloatBuffer vertex, FloatBuffer texture, int triangle_size){
+        long renderedAt=System.nanoTime();
+        //start=System.nanoTime();
         // Setup OpenGL state.
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f); //to clear the screen.
         glDisable(GL_DEPTH_TEST);
@@ -208,12 +185,18 @@ public class Transform {
         mMVPMatrixHandle = GLES20.glGetUniformLocation(program, "uMVPMatrix"); // get handle to shape's transformation matrix
         GLES20.glUniformMatrix4fv(mMVPMatrixHandle, 1, false, mvpMatrix, 0); // Apply the projection and view transformation
 
+
+
         glClear(GL_COLOR_BUFFER_BIT); // Clear the contents of the GLSurfaceView using glClear
         GLES20.glDrawArrays(GLES10.GL_TRIANGLES, 0, triangle_size);
+
 
         // clear buffer
         vertex.clear();
 
+
+        return renderedAt;
     }
+
 
 }
