@@ -62,7 +62,8 @@ public class GlRenderer22 implements GLSurfaceView.Renderer{
     long end=System.nanoTime();
     MediaPlayer mplayer;
     int audioDuration=0;
-
+    float audioLength=0;
+    float audioLatency=0;
 
     public long AudioPlayer(String url) throws IOException {
         mplayer = new MediaPlayer();
@@ -70,17 +71,13 @@ public class GlRenderer22 implements GLSurfaceView.Renderer{
 
         mplayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
         try {
-            System.out.println("Here1");
 //            File audio_path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
 //            File myObj = new File(audio_path, "M6_0.wav");
 //            mplayer.setDataSource(String.valueOf(myObj));
             mplayer.setDataSource(url);
-            System.out.println("Here2");
             mplayer.prepare();
             audioStarted=System.nanoTime();
-            System.out.println("Here3");
             mplayer.start();
-            System.out.println("Here4");
 
 
         }catch (IOException e) {
@@ -107,9 +104,11 @@ public class GlRenderer22 implements GLSurfaceView.Renderer{
     public void ReadFiles()throws FileNotFoundException{
         tri_idx = Transform.ReadTriangulationFile("triangulation.txt");
         ref_pts = Transform.ReadReferenceFile("reference_points.txt");
-        wrp_pts = Transform.ReadWarpedFile("warped_points.txt");
-        System.out.println("wrp pts size"+wrp_pts.size()/ref_pts.size());
+        wrp_pts = Transform.ReadWarpedFile("warped_points.txt",ref_pts.size());
+        audioLength=(wrp_pts.size()/ref_pts.size())/62.5f;
+        System.out.println("wrp pts size"+wrp_pts.size()/ref_pts.size()/62.5);
         triangle_size = tri_idx.size();
+
         total_frame = wrp_pts.size() / ref_pts.size();    // number of frame
     }
 
@@ -192,9 +191,9 @@ public class GlRenderer22 implements GLSurfaceView.Renderer{
 
     int i = 0;
 
-    float frame_rate = 62.5f;
-    float frameInterval = 1000/frame_rate;
-    float totalTime=total_frame*frameInterval;
+    //float frame_rate = 62.5f;
+    //float frameInterval = 1000/frame_rate;
+    //float totalTime=total_frame*frameInterval;
 
 
     @Override
@@ -203,78 +202,98 @@ public class GlRenderer22 implements GLSurfaceView.Renderer{
         if(flag)
         {
             try {
-                AudioPlayer("http://stream.mcgroce.com/examples/1626242467.228868.wav");
+                AudioPlayer("http://stream.mcgroce.com/examples/1626170045.121975.wav");
                 start_time=System.currentTimeMillis();
                 audioDuration=mplayer.getDuration();
+                System.out.println("length from frames : "+audioLength);
+                System.out.println("legth of audio from player "+ audioDuration/1e3);
+                System.out.println("freq="+(double)(wrp_pts.size()/((double)(audioDuration/1e3*ref_pts.size()))));
+                audioLatency=(float)(audioDuration/1e3)-audioLength;
                 flag=false;
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
+        latency=System.nanoTime()-start;
+        start=System.nanoTime();
 
+
+        //System.out.println("FPS : "+1e9/latency);
+        //System.out.println("count : "+counter++);
         //curr_time=System.currentTimeMillis();
-        int audioTime=mplayer.getCurrentPosition();
-        double timeSec=(audioTime)/10e3;
-
+        long audioTime=mplayer.getCurrentPosition();
+        double timeSec=(double)(audioTime)/1e3-audioLatency;
 
         if(timeSec<0)
         {
             timeSec=0;
         }
 
-        System.out.println("freq="+(float)(wrp_pts.size()/((float)(audioDuration/10e3*ref_pts.size()))));
+        i=(int)(timeSec*((double)(wrp_pts.size()/((double)audioLength*ref_pts.size()))));
+        //System.out.println("time : "+audioDuration/1e3);
 
-        i=(int)(timeSec*((float)(wrp_pts.size()/((float)audioDuration/10e3*ref_pts.size()))));
+        //i=(int)(timeSec*62.5);
 
+        if(i<0)
+        {
+            i=0;
+        }
 
-            long frameStart=System.nanoTime();
-            start=System.nanoTime();
-            int st = i * ref_pts.size();
-            int en = st + ref_pts.size();
-            if(en> wrp_pts.size())
-            {
-                i=0;
-                st = 0;
-                en = st + 160;
-                flag=true;
-            }
+        if(!mplayer.isPlaying())
+        {
+            System.out.println("Flag set true");
+            flag=true;
+        }
 
-            List<Float> wrp_pts_i = wrp_pts.subList(st, en);
-            ByteBuffer BbVertex = ByteBuffer.allocateDirect(tri_idx.size() * 2 * 4);
-            BbVertex.order(ByteOrder.nativeOrder());
-            vertex = BbVertex.asFloatBuffer();
-            int j = 0;
-            for (int idx = 0; idx < tri_idx.size(); idx++) {
-                int val = tri_idx.get(idx);
-                int pt = val;
+        long frameStart=System.nanoTime();
+        start=System.nanoTime();
+        int st = i * ref_pts.size();
+        int en = st + ref_pts.size();
+        if(en> wrp_pts.size())
+        {
+            i=0;
+            st = 0;
+            en = st + ref_pts.size();
+            flag=true;
+        }
 
-                float wrp_pt1 = wrp_pts_i.get(pt);
-                float wrp_pt2 = wrp_pts_i.get(pt + 1);
-                vertex.put(j, wrp_pt1);
-                vertex.put(j + 1, wrp_pt2);
-                j = j + 2;
-            }
-            vertex.position(0);
-            //i = i + 1;
+        List<Float> wrp_pts_i = wrp_pts.subList(st, en);
+        ByteBuffer BbVertex = ByteBuffer.allocateDirect(tri_idx.size() * 2 * 4);
+        BbVertex.order(ByteOrder.nativeOrder());
+        vertex = BbVertex.asFloatBuffer();
+        int j = 0;
+        for (int idx = 0; idx < tri_idx.size(); idx++) {
+            int val = tri_idx.get(idx);
+            int pt = val;
 
-            //Redraw background colour
-            gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT);
+            float wrp_pt1 = wrp_pts_i.get(pt);
+            float wrp_pt2 = wrp_pts_i.get(pt + 1);
+            vertex.put(j, wrp_pt1);
+            vertex.put(j + 1, wrp_pt2);
+            j = j + 2;
+        }
+        vertex.position(0);
+        //i = i + 1;
 
-            Matrix.setIdentityM(mMVPMatrix, 0);//set the model view projection matrix to an identity matrix
-            Matrix.setIdentityM(mMVMatrix, 0);//set the model view  matrix to an identity matrix
-            Matrix.setIdentityM(mModelMatrix, 0);//set the model matrix to an identity matrix
+        //Redraw background colour
+        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT);
+
+        Matrix.setIdentityM(mMVPMatrix, 0);//set the model view projection matrix to an identity matrix
+        Matrix.setIdentityM(mMVMatrix, 0);//set the model view  matrix to an identity matrix
+        Matrix.setIdentityM(mModelMatrix, 0);//set the model matrix to an identity matrix
 
             // Set the camera position (View matrix)
-            Matrix.setLookAtM(mViewMatrix, 0,
-                    0.0f, 0f, 1.0f,//camera is at (0,0,1)
-                    0f, 0f, 0f,//looks at the origin
-                    0f, 1f, 0.0f);//head is down (set to (0,1,0) to look from the top)
+        Matrix.setLookAtM(mViewMatrix, 0,
+                0.0f, 0f, 1.0f,//camera is at (0,0,1)
+                0f, 0f, 0f,//looks at the origin
+                0f, 1f, 0.0f);//head is down (set to (0,1,0) to look from the top)
 
-            Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mViewMatrix, 0);
+        Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mViewMatrix, 0);
 
 
-            long renderedAt=Transform.run(tex[0], mMVPMatrix, vertex, texture, triangle_size);
-        start=System.nanoTime();
+        end=Transform.run(tex[0], mMVPMatrix, vertex, texture, triangle_size);
+
+        //latency=end-start;
         /*if(flag)
         {
 

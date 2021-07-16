@@ -113,7 +113,7 @@ public class Transform {
     }
 
     // read Warp.txt
-    static List ReadWarpedFile(String file_name) throws FileNotFoundException {
+    static List ReadWarpedFile(String file_name,int refLen) throws FileNotFoundException {
 
         List<Float> list=new ArrayList<Float>(20000);
 
@@ -123,7 +123,7 @@ public class Transform {
         while (myReader.hasNextLine()) {
             String data = myReader.nextLine();
             String[] arrOfStr = data.split(" ");
-            for (int i=0; i<160; i++) {
+            for (int i=0; i<refLen; i++) {
                 float val = Float.parseFloat(arrOfStr[i]);
                 list.add(val);
             }
